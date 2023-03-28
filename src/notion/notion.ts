@@ -1,43 +1,53 @@
 import { Client } from "@notionhq/client";
 import {
-  AppendBlockChildrenParameters,
   BlockObjectRequest,
+  deleteBlock,
 } from "@notionhq/client/build/src/api-endpoints";
 
 class Notion {
-  notion: Client;
-  blockID: string;
+  private notion: Client;
+  pageID: string;
 
-  constructor(notionToken: string, blockID: string) {
-    this.blockID = blockID;
+  constructor(notionToken: string, pageID: string) {
+    this.pageID = pageID;
 
     this.notion = new Client({
       auth: notionToken,
     });
   }
 
-  private async apiCall(newChildren: BlockObjectRequest[]) {
+  private async appendToPage(
+    pageID: string,
+    newChildren: BlockObjectRequest[]
+  ) {
     try {
       await this.notion.blocks.children.append({
-        block_id: this.blockID,
+        block_id: pageID,
         children: newChildren,
       });
     } catch (e) {
+      console.error(e);
       throw new Error("Notion API Error");
     }
   }
 
-  async addDivider() {
-    await this.apiCall([
-      {
-        type: "divider",
-        divider: {},
+  async addPageToDatabase(title: string) {
+    return this.notion.pages.create({
+      parent: {
+        type: "database_id",
+        database_id: this.pageID,
       },
-    ]);
+      properties: {
+        Name: {
+          type: "title",
+          title: [{ type: "text", text: { content: title } }],
+        },
+      },
+    });
   }
 
-  async addText(text: string) {
-    await this.apiCall([
+  async addTextToPage(pageID: string, text: string) {
+    await this.appendToPage(pageID, [
       {
         type: "paragraph",
         paragraph: {
@@ -53,8 +63,8 @@ class Notion {
     ]);
   }
 
-  async addImage(URL: string) {
-    await this.apiCall([
+  async addImageToPage(pageID: string, URL: string) {
+    await this.appendToPage(pageID, [
       {
         type: "image",
         image: {
@@ -67,5 +77,20 @@ class Notion {
     ]);
   }
 }
+
+// const main = async () => {
+//   const notion = new Notion();
+
+//   const page = await notion.addPageToDatabase("dsadsa");
+//   console.log(page);
+
+//   const t = await notion.addTextToPage(
+//     page.id,
+//     "https://www.google.com/search?client=firefox-b-d&q=notion+api+add+to+database"
+//   );
+//   console.log(t);
+// };
+
+// main();
 
 export { Notion };
