@@ -3,6 +3,8 @@ version: '3'
 services:
 
   addtonotionbot:
+    depends_on:
+      - imgpush
     build: .
     container_name: addtonotionbot
     restart: always
