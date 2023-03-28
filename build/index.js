@@ -45,155 +45,6 @@ var __async = (__this, __arguments, generator) => {
   });
 };
 
-// node_modules/dotenv/package.json
-var require_package = __commonJS({
-  "node_modules/dotenv/package.json"(exports, module2) {
-    module2.exports = {
-      name: "dotenv",
-      version: "16.0.3",
-      description: "Loads environment variables from .env file",
-      main: "lib/main.js",
-      types: "lib/main.d.ts",
-      exports: {
-        ".": {
-          require: "./lib/main.js",
-          types: "./lib/main.d.ts",
-          default: "./lib/main.js"
-        },
-        "./config": "./config.js",
-        "./config.js": "./config.js",
-        "./lib/env-options": "./lib/env-options.js",
-        "./lib/env-options.js": "./lib/env-options.js",
-        "./lib/cli-options": "./lib/cli-options.js",
-        "./lib/cli-options.js": "./lib/cli-options.js",
-        "./package.json": "./package.json"
-      },
-      scripts: {
-        "dts-check": "tsc --project tests/types/tsconfig.json",
-        lint: "standard",
-        "lint-readme": "standard-markdown",
-        pretest: "npm run lint && npm run dts-check",
-        test: "tap tests/*.js --100 -Rspec",
-        prerelease: "npm test",
-        release: "standard-version"
-      },
-      repository: {
-        type: "git",
-        url: "git://github.com/motdotla/dotenv.git"
-      },
-      keywords: [
-        "dotenv",
-        "env",
-        ".env",
-        "environment",
-        "variables",
-        "config",
-        "settings"
-      ],
-      readmeFilename: "README.md",
-      license: "BSD-2-Clause",
-      devDependencies: {
-        "@types/node": "^17.0.9",
-        decache: "^4.6.1",
-        dtslint: "^3.7.0",
-        sinon: "^12.0.1",
-        standard: "^16.0.4",
-        "standard-markdown": "^7.1.0",
-        "standard-version": "^9.3.2",
-        tap: "^15.1.6",
-        tar: "^6.1.11",
-        typescript: "^4.5.4"
-      },
-      engines: {
-        node: ">=12"
-      }
-    };
-  }
-});
-
-// node_modules/dotenv/lib/main.js
-var require_main = __commonJS({
-  "node_modules/dotenv/lib/main.js"(exports, module2) {
-    var fs = require("fs");
-    var path = require("path");
-    var os = require("os");
-    var packageJson = require_package();
-    var version = packageJson.version;
-    var LINE = /(?:^|^)\s*(?:export\s+)?([\w.-]+)(?:\s*=\s*?|:\s+?)(\s*'(?:\\'|[^'])*'|\s*"(?:\\"|[^"])*"|\s*`(?:\\`|[^`])*`|[^#\r\n]+)?\s*(?:#.*)?(?:$|$)/mg;
-    function parse(src) {
-      const obj = {};
-      let lines = src.toString();
-      lines = lines.replace(/\r\n?/mg, "\n");
-      let match;
-      while ((match = LINE.exec(lines)) != null) {
-        const key = match[1];
-        let value = match[2] || "";
-        value = value.trim();
-        const maybeQuote = value[0];
-        value = value.replace(/^(['"`])([\s\S]*)\1$/mg, "$2");
-        if (maybeQuote === '"') {
-          value = value.replace(/\\n/g, "\n");
-          value = value.replace(/\\r/g, "\r");
-        }
-        obj[key] = value;
-      }
-      return obj;
-    }
-    function _log(message) {
-      console.log(`[dotenv@${version}][DEBUG] ${message}`);
-    }
-    function _resolveHome(envPath) {
-      return envPath[0] === "~" ? path.join(os.homedir(), envPath.slice(1)) : envPath;
-    }
-    function config2(options) {
-      let dotenvPath = path.resolve(process.cwd(), ".env");
-      let encoding = "utf8";
-      const debug = Boolean(options && options.debug);
-      const override = Boolean(options && options.override);
-      if (options) {
-        if (options.path != null) {
-          dotenvPath = _resolveHome(options.path);
-        }
-        if (options.encoding != null) {
-          encoding = options.encoding;
-        }
-      }
-      try {
-        const parsed = DotenvModule.parse(fs.readFileSync(dotenvPath, { encoding }));
-        Object.keys(parsed).forEach(function(key) {
-          if (!Object.prototype.hasOwnProperty.call(process.env, key)) {
-            process.env[key] = parsed[key];
-          } else {
-            if (override === true) {
-              process.env[key] = parsed[key];
-            }
-            if (debug) {
-              if (override === true) {
-                _log(`"${key}" is already defined in \`process.env\` and WAS overwritten`);
-              } else {
-                _log(`"${key}" is already defined in \`process.env\` and was NOT overwritten`);
-              }
-            }
-          }
-        });
-        return { parsed };
-      } catch (e) {
-        if (debug) {
-          _log(`Failed to load ${dotenvPath} ${e.message}`);
-        }
-        return { error: e };
-      }
-    }
-    var DotenvModule = {
-      config: config2,
-      parse
-    };
-    module2.exports.config = DotenvModule.config;
-    module2.exports.parse = DotenvModule.parse;
-    module2.exports = DotenvModule;
-  }
-});
-
 // node_modules/ms/index.js
 var require_ms = __commonJS({
   "node_modules/ms/index.js"(exports, module2) {
@@ -838,7 +689,7 @@ var require_context = __commonJS({
     exports.Context = void 0;
     var debug_1 = __importDefault(require_src());
     var debug = (0, debug_1.default)("telegraf:context");
-    var Context2 = class {
+    var Context = class {
       constructor(update, telegram, botInfo) {
         this.update = update;
         this.telegram = telegram;
@@ -1871,8 +1722,8 @@ var require_context = __commonJS({
         return this.telegram.getMyDefaultAdministratorRights(extra);
       }
     };
-    exports.Context = Context2;
-    exports.default = Context2;
+    exports.Context = Context;
+    exports.default = Context;
     function getMessageFromAnySource(ctx) {
       var _a, _b, _c, _d, _e;
       return (_e = (_d = (_b = (_a = ctx.message) !== null && _a !== void 0 ? _a : ctx.editedMessage) !== null && _b !== void 0 ? _b : (_c = ctx.callbackQuery) === null || _c === void 0 ? void 0 : _c.message) !== null && _d !== void 0 ? _d : ctx.channelPost) !== null && _e !== void 0 ? _e : ctx.editedChannelPost;
@@ -6168,12 +6019,12 @@ var require_lib2 = __commonJS({
       const dest = new URL$1(destination).protocol;
       return orig === dest;
     };
-    function fetch(url, opts) {
-      if (!fetch.Promise) {
+    function fetch2(url, opts) {
+      if (!fetch2.Promise) {
         throw new Error("native promise missing, set fetch.Promise to your favorite alternative");
       }
-      Body.Promise = fetch.Promise;
-      return new fetch.Promise(function(resolve, reject) {
+      Body.Promise = fetch2.Promise;
+      return new fetch2.Promise(function(resolve, reject) {
         const request = new Request(url, opts);
         const options = getNodeRequestOptions(request);
         const send = (options.protocol === "https:" ? https : http).request;
@@ -6246,7 +6097,7 @@ var require_lib2 = __commonJS({
         req.on("response", function(res) {
           clearTimeout(reqTimeout);
           const headers = createHeadersLenient(res.headers);
-          if (fetch.isRedirect(res.statusCode)) {
+          if (fetch2.isRedirect(res.statusCode)) {
             const location = headers.get("Location");
             let locationURL = null;
             try {
@@ -6308,7 +6159,7 @@ var require_lib2 = __commonJS({
                   requestOpts.body = void 0;
                   requestOpts.headers.delete("content-length");
                 }
-                resolve(fetch(new Request(locationURL, requestOpts)));
+                resolve(fetch2(new Request(locationURL, requestOpts)));
                 finalize();
                 return;
             }
@@ -6401,11 +6252,11 @@ var require_lib2 = __commonJS({
         stream.end();
       }
     }
-    fetch.isRedirect = function(code) {
+    fetch2.isRedirect = function(code) {
       return code === 301 || code === 302 || code === 303 || code === 307 || code === 308;
     };
-    fetch.Promise = global.Promise;
-    module2.exports = exports = fetch;
+    fetch2.Promise = global.Promise;
+    module2.exports = exports = fetch2;
     Object.defineProperty(exports, "__esModule", { value: true });
     exports.default = exports;
     exports.Headers = Headers;
@@ -6944,12 +6795,12 @@ var require_client = __commonJS({
           });
         }
         debug("HTTP call", method, payload);
-        const config2 = includesMedia(payload) ? await buildFormDataConfig({ method, ...payload }, options.attachmentAgent) : await buildJSONConfig(payload);
+        const config3 = includesMedia(payload) ? await buildFormDataConfig({ method, ...payload }, options.attachmentAgent) : await buildJSONConfig(payload);
         const apiUrl = new url_1.URL(`./${options.apiMode}${token}${options.testEnv ? "/test" : ""}/${method}`, options.apiRoot);
-        config2.agent = options.agent;
-        config2.signal = signal;
-        config2.timeout = 5e5;
-        const res = await (0, node_fetch_1.default)(apiUrl, config2).catch(redactToken);
+        config3.agent = options.agent;
+        config3.signal = signal;
+        config3.timeout = 5e5;
+        const res = await (0, node_fetch_1.default)(apiUrl, config3).catch(redactToken);
         if (res.status >= 500) {
           const errorPayload = {
             error_code: res.status,
@@ -8441,7 +8292,7 @@ var require_telegraf = __commonJS({
     }
     var anoop = always(Promise.resolve());
     var TOKEN_HEADER = "x-telegram-bot-api-secret-token";
-    var Telegraf2 = class extends composer_1.Composer {
+    var Telegraf3 = class extends composer_1.Composer {
       constructor(token, options) {
         super();
         this.context = {};
@@ -8546,32 +8397,32 @@ var require_telegraf = __commonJS({
       /**
        * @see https://github.com/telegraf/telegraf/discussions/1344#discussioncomment-335700
        */
-      async launch(config2 = {}) {
+      async launch(config3 = {}) {
         var _a;
         debug("Connecting to Telegram");
         (_a = this.botInfo) !== null && _a !== void 0 ? _a : this.botInfo = await this.telegram.getMe();
         debug(`Launching @${this.botInfo.username}`);
-        if (config2.webhook === void 0) {
+        if (config3.webhook === void 0) {
           await this.telegram.deleteWebhook({
-            drop_pending_updates: config2.dropPendingUpdates
+            drop_pending_updates: config3.dropPendingUpdates
           });
           debug("Bot started with long polling");
-          await this.startPolling(config2.allowedUpdates);
+          await this.startPolling(config3.allowedUpdates);
           return;
         }
         const domainOpts = this.getDomainOpts({
-          domain: config2.webhook.domain,
-          path: config2.webhook.hookPath
+          domain: config3.webhook.domain,
+          path: config3.webhook.hookPath
         });
-        const { tlsOptions, port, host, cb, secretToken } = config2.webhook;
+        const { tlsOptions, port, host, cb, secretToken } = config3.webhook;
         this.startWebhook(domainOpts.path, tlsOptions, port, host, cb, secretToken);
         await this.telegram.setWebhook(domainOpts.url, {
-          drop_pending_updates: config2.dropPendingUpdates,
-          allowed_updates: config2.allowedUpdates,
-          ip_address: config2.webhook.ipAddress,
-          max_connections: config2.webhook.maxConnections,
-          secret_token: config2.webhook.secretToken,
-          certificate: config2.webhook.certificate
+          drop_pending_updates: config3.dropPendingUpdates,
+          allowed_updates: config3.allowedUpdates,
+          ip_address: config3.webhook.ipAddress,
+          max_connections: config3.webhook.maxConnections,
+          secret_token: config3.webhook.secretToken,
+          certificate: config3.webhook.certificate
         });
         debug(`Bot started with webhook @ ${domainOpts.url}`);
       }
@@ -8604,7 +8455,7 @@ var require_telegraf = __commonJS({
         }
       }
     };
-    exports.Telegraf = Telegraf2;
+    exports.Telegraf = Telegraf3;
   }
 });
 
@@ -9432,6 +9283,155 @@ var require_lib3 = __commonJS({
       return session_1.MemorySessionStore;
     } });
     exports.Scenes = __importStar(require_scenes());
+  }
+});
+
+// node_modules/dotenv/package.json
+var require_package = __commonJS({
+  "node_modules/dotenv/package.json"(exports, module2) {
+    module2.exports = {
+      name: "dotenv",
+      version: "16.0.3",
+      description: "Loads environment variables from .env file",
+      main: "lib/main.js",
+      types: "lib/main.d.ts",
+      exports: {
+        ".": {
+          require: "./lib/main.js",
+          types: "./lib/main.d.ts",
+          default: "./lib/main.js"
+        },
+        "./config": "./config.js",
+        "./config.js": "./config.js",
+        "./lib/env-options": "./lib/env-options.js",
+        "./lib/env-options.js": "./lib/env-options.js",
+        "./lib/cli-options": "./lib/cli-options.js",
+        "./lib/cli-options.js": "./lib/cli-options.js",
+        "./package.json": "./package.json"
+      },
+      scripts: {
+        "dts-check": "tsc --project tests/types/tsconfig.json",
+        lint: "standard",
+        "lint-readme": "standard-markdown",
+        pretest: "npm run lint && npm run dts-check",
+        test: "tap tests/*.js --100 -Rspec",
+        prerelease: "npm test",
+        release: "standard-version"
+      },
+      repository: {
+        type: "git",
+        url: "git://github.com/motdotla/dotenv.git"
+      },
+      keywords: [
+        "dotenv",
+        "env",
+        ".env",
+        "environment",
+        "variables",
+        "config",
+        "settings"
+      ],
+      readmeFilename: "README.md",
+      license: "BSD-2-Clause",
+      devDependencies: {
+        "@types/node": "^17.0.9",
+        decache: "^4.6.1",
+        dtslint: "^3.7.0",
+        sinon: "^12.0.1",
+        standard: "^16.0.4",
+        "standard-markdown": "^7.1.0",
+        "standard-version": "^9.3.2",
+        tap: "^15.1.6",
+        tar: "^6.1.11",
+        typescript: "^4.5.4"
+      },
+      engines: {
+        node: ">=12"
+      }
+    };
+  }
+});
+
+// node_modules/dotenv/lib/main.js
+var require_main = __commonJS({
+  "node_modules/dotenv/lib/main.js"(exports, module2) {
+    var fs = require("fs");
+    var path = require("path");
+    var os = require("os");
+    var packageJson = require_package();
+    var version = packageJson.version;
+    var LINE = /(?:^|^)\s*(?:export\s+)?([\w.-]+)(?:\s*=\s*?|:\s+?)(\s*'(?:\\'|[^'])*'|\s*"(?:\\"|[^"])*"|\s*`(?:\\`|[^`])*`|[^#\r\n]+)?\s*(?:#.*)?(?:$|$)/mg;
+    function parse(src) {
+      const obj = {};
+      let lines = src.toString();
+      lines = lines.replace(/\r\n?/mg, "\n");
+      let match;
+      while ((match = LINE.exec(lines)) != null) {
+        const key = match[1];
+        let value = match[2] || "";
+        value = value.trim();
+        const maybeQuote = value[0];
+        value = value.replace(/^(['"`])([\s\S]*)\1$/mg, "$2");
+        if (maybeQuote === '"') {
+          value = value.replace(/\\n/g, "\n");
+          value = value.replace(/\\r/g, "\r");
+        }
+        obj[key] = value;
+      }
+      return obj;
+    }
+    function _log(message) {
+      console.log(`[dotenv@${version}][DEBUG] ${message}`);
+    }
+    function _resolveHome(envPath) {
+      return envPath[0] === "~" ? path.join(os.homedir(), envPath.slice(1)) : envPath;
+    }
+    function config3(options) {
+      let dotenvPath = path.resolve(process.cwd(), ".env");
+      let encoding = "utf8";
+      const debug = Boolean(options && options.debug);
+      const override = Boolean(options && options.override);
+      if (options) {
+        if (options.path != null) {
+          dotenvPath = _resolveHome(options.path);
+        }
+        if (options.encoding != null) {
+          encoding = options.encoding;
+        }
+      }
+      try {
+        const parsed = DotenvModule.parse(fs.readFileSync(dotenvPath, { encoding }));
+        Object.keys(parsed).forEach(function(key) {
+          if (!Object.prototype.hasOwnProperty.call(process.env, key)) {
+            process.env[key] = parsed[key];
+          } else {
+            if (override === true) {
+              process.env[key] = parsed[key];
+            }
+            if (debug) {
+              if (override === true) {
+                _log(`"${key}" is already defined in \`process.env\` and WAS overwritten`);
+              } else {
+                _log(`"${key}" is already defined in \`process.env\` and was NOT overwritten`);
+              }
+            }
+          }
+        });
+        return { parsed };
+      } catch (e) {
+        if (debug) {
+          _log(`Failed to load ${dotenvPath} ${e.message}`);
+        }
+        return { error: e };
+      }
+    }
+    var DotenvModule = {
+      config: config3,
+      parse
+    };
+    module2.exports.config = DotenvModule.config;
+    module2.exports.parse = DotenvModule.parse;
+    module2.exports = DotenvModule;
   }
 });
 
@@ -10940,11 +10940,24 @@ var require_node_persist = __commonJS({
   }
 });
 
-// src/index.ts
-var dotenv = __toESM(require_main());
+// src/telegramBot/setup.ts
+var import_telegraf2 = __toESM(require_lib3());
 
-// src/telegramBot/bot.ts
-var import_telegraf = __toESM(require_lib3());
+// src/config.ts
+var dotenv = __toESM(require_main());
+dotenv.config();
+if (!process.env.TELEGRAM_BOT_TOKEN) {
+  console.error("Add TELEGRAM_BOT_TOKEN to .env file");
+  process.exit();
+}
+if (!process.env.IMG_UPLOAD_URL) {
+  console.error("Add IMG_UPLOAD_URL to .env file");
+  process.exit();
+}
+var config2 = {
+  telegramBotToken: process.env.TELEGRAM_BOT_TOKEN,
+  imgUploadURL: process.env.IMG_UPLOAD_URL
+};
 
 // src/notion/notion.ts
 var import_client = __toESM(require_src2());
@@ -10955,50 +10968,105 @@ var Notion = class {
       auth: notionToken
     });
   }
+  apiCall(newChildren) {
+    return __async(this, null, function* () {
+      try {
+        yield this.notion.blocks.children.append({
+          block_id: this.blockID,
+          children: newChildren
+        });
+      } catch (e) {
+        throw new Error("Notion API Error");
+      }
+    });
+  }
+  addDivider() {
+    return __async(this, null, function* () {
+      yield this.apiCall([
+        {
+          type: "divider",
+          divider: {}
+        }
+      ]);
+    });
+  }
   addText(text) {
     return __async(this, null, function* () {
-      yield this.notion.blocks.children.append({
-        block_id: this.blockID,
-        children: [
-          {
-            type: "divider",
-            divider: {}
-          },
-          {
-            type: "paragraph",
-            paragraph: {
-              rich_text: [
-                {
-                  text: {
-                    content: text
-                  }
+      yield this.apiCall([
+        {
+          type: "paragraph",
+          paragraph: {
+            rich_text: [
+              {
+                text: {
+                  content: text
                 }
-              ]
-            }
+              }
+            ]
           }
-        ]
-      }).catch((error) => console.error(error));
+        }
+      ]);
     });
   }
   addImage(URL2) {
     return __async(this, null, function* () {
-      yield this.notion.blocks.children.append({
-        block_id: this.blockID,
-        children: [
-          {
-            type: "image",
-            image: {
-              type: "external",
-              external: {
-                url: URL2
-              }
+      yield this.apiCall([
+        {
+          type: "image",
+          image: {
+            type: "external",
+            external: {
+              url: URL2
             }
           }
-        ]
-      }).catch((error) => console.error(error));
+        }
+      ]);
     });
   }
 };
+
+// src/telegramBot/handleMessage.ts
+var uploadFile = (telegramURL) => __async(void 0, null, function* () {
+  const resp = yield fetch(config2.imgUploadURL, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify({
+      url: telegramURL
+    })
+  });
+  if (!resp.ok) {
+    throw new Error("Error uploading file.");
+  }
+  const data = yield resp.json();
+  return `${config2.imgUploadURL}/${data.filename}`;
+});
+var handleFile = (ctx) => __async(void 0, null, function* () {
+  const message = ctx.update.message;
+  console.log(ctx.update.message);
+  var file = null;
+  if ("document" in message) {
+    file = yield ctx.telegram.getFileLink(message.document.file_id);
+  }
+  if ("photo" in message) {
+    file = yield ctx.telegram.getFileLink(message.photo.slice(-1)[0].file_id);
+  }
+  if (file) {
+    const newURL = yield uploadFile(file.href);
+    yield ctx.notion.addImage(newURL);
+  }
+  if ("caption" in message) {
+  }
+  if ("text" in message) {
+    yield ctx.notion.addText(message.text);
+  }
+  yield ctx.notion.addDivider();
+});
+var onMessage = (ctx) => __async(void 0, null, function* () {
+  yield handleFile(ctx);
+  yield ctx.reply("Added.");
+});
 
 // src/telegramBot/storage.ts
 var import_node_persist = __toESM(require_node_persist());
@@ -11019,52 +11087,9 @@ var setUserData = (userID, userData) => __async(void 0, null, function* () {
   return import_node_persist.default.setItem(userID, userData);
 });
 
-// src/telegramBot/bot.ts
-var PROMPT_TEXT = `
-*AddToNotionBot*
-I am your addToNotionBot I can add resources directly into your Notion page
-To know which Notion account and page to add to, I need some information from you
-
-__Preparation__
-Step 1:
-I need a "Internal Integration Token"
-Go to [My Integrations](https://www\\.notion\\.so/my\\-integrations) and create an Integration
-I will ask for the "Internal Integration Token" shortly
-
-Step 2:
-Go to the page you want to use as a WebDump, go to settings 
-Then you need to add the connection to the connection you created in Step 1
-Next, you have to send me the page link, so I know, where to add your links
-
-These steps are explained again here:
-[Create a Notion Integration](https://developers\\.notion\\.com/docs/create\\-a\\-notion\\-integration)
-
-__Setup__
-Use the command \`r/setup\` to enter the necessary details
-
-__Help__
-Use the command \`help\` to show this message
-`;
-var setupBot = (TELEGRAM_BOT_TOKEN) => __async(void 0, null, function* () {
-  yield setUpStorage();
-  const bot = new import_telegraf.Telegraf(TELEGRAM_BOT_TOKEN);
-  const hasUserInfo = (ctx) => {
-    var _a;
-    return !!((_a = ctx.userData) == null ? void 0 : _a.notionToken) && !!ctx.userData.webDumpPageID;
-  };
-  bot.use((0, import_telegraf.session)());
-  bot.use((ctx, next) => __async(void 0, null, function* () {
-    var _a;
-    const userID = ((_a = ctx.from) == null ? void 0 : _a.id.toString()) || "";
-    const userData = yield getUserData(userID);
-    ctx.userID = userID;
-    ctx.userData = userData;
-    ctx.notion = new Notion(
-      ctx.userData.notionToken || "",
-      ctx.userData.webDumpPageID || ""
-    );
-    return next();
-  }));
+// src/telegramBot/wizard.ts
+var import_telegraf = __toESM(require_lib3());
+var addWizard = (bot) => {
   const superWizard = new import_telegraf.Scenes.WizardScene(
     "setup",
     (ctx) => __async(void 0, null, function* () {
@@ -11091,6 +11116,55 @@ var setupBot = (TELEGRAM_BOT_TOKEN) => __async(void 0, null, function* () {
   );
   const stage = new import_telegraf.Scenes.Stage([superWizard]);
   bot.use(stage.middleware());
+};
+
+// src/telegramBot/setup.ts
+var PROMPT_TEXT = `
+*AddToNotionBot*
+I am your addToNotionBot I can add resources directly into your Notion page
+To know which Notion account and page to add to, I need some information from you
+
+__Preparation__
+Step 1:
+I need a "Internal Integration Token"
+Go to [My Integrations](https://www\\.notion\\.so/my\\-integrations) and create an Integration
+I will ask for the "Internal Integration Token" shortly
+
+Step 2:
+Go to the page you want to use as a WebDump, go to settings 
+Then you need to add the connection to the connection you created in Step 1
+Next, you have to send me the page link, so I know, where to add your links
+
+These steps are explained again here:
+[Create a Notion Integration](https://developers\\.notion\\.com/docs/create\\-a\\-notion\\-integration)
+
+__Setup__
+Use the command \`r/setup\` to enter the necessary details
+
+__Help__
+Use the command \`help\` to show this message
+`;
+var setupBot = () => __async(void 0, null, function* () {
+  yield setUpStorage();
+  const bot = new import_telegraf2.Telegraf(config2.telegramBotToken);
+  const hasUserInfo = (ctx) => {
+    var _a;
+    return !!((_a = ctx.userData) == null ? void 0 : _a.notionToken) && !!ctx.userData.webDumpPageID;
+  };
+  bot.use((0, import_telegraf2.session)());
+  bot.use((ctx, next) => __async(void 0, null, function* () {
+    var _a;
+    const userID = ((_a = ctx.from) == null ? void 0 : _a.id.toString()) || "";
+    const userData = yield getUserData(userID);
+    ctx.userID = userID;
+    ctx.userData = userData;
+    ctx.notion = new Notion(
+      ctx.userData.notionToken || "",
+      ctx.userData.webDumpPageID || ""
+    );
+    return next();
+  }));
+  addWizard(bot);
   bot.command("setup", (ctx) => __async(void 0, null, function* () {
     yield ctx.scene.enter("setup");
   }));
@@ -11115,34 +11189,14 @@ var setupBot = (TELEGRAM_BOT_TOKEN) => __async(void 0, null, function* () {
     }
     return next();
   }));
-  bot.on("message", (ctx) => __async(void 0, null, function* () {
-    const message = ctx.update.message;
-    console.log(ctx.update.message);
-    if ("document" in message) {
-      const file = yield ctx.telegram.getFileLink(message.document.file_id);
-      ctx.notion.addImage(file.href);
-    }
-    if ("photo" in message) {
-      const file = yield ctx.telegram.getFileLink(
-        message.photo.slice(-1)[0].file_id
-      );
-      ctx.notion.addImage(file.href);
-    }
-    if ("caption" in message) {
-    }
-    if ("text" in message) {
-      message.text;
-      ctx.notion.addText(message.text);
-    }
-  }));
+  bot.on("message", (ctx) => onMessage(ctx));
   process.once("SIGINT", () => bot.stop("SIGINT"));
   process.once("SIGTERM", () => bot.stop("SIGTERM"));
   return bot;
 });
 
 // src/index.ts
-dotenv.config();
-setupBot(process.env.TELEGRAM_BOT_TOKEN || "").then((bot) => bot.launch());
+setupBot().then((bot) => bot.launch());
 /*! Bundled license information:
 
 sandwich-stream/dist/sandwich-stream.js:

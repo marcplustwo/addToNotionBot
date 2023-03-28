@@ -1,4 +1,8 @@
 import { Client } from "@notionhq/client";
+import {
+  AppendBlockChildrenParameters,
+  BlockObjectRequest,
+} from "@notionhq/client/build/src/api-endpoints";
 
 class Notion {
   notion: Client;
@@ -12,86 +16,56 @@ class Notion {
     });
   }
 
-  async addText(text: string) {
-    await this.notion.blocks.children
-      .append({
+  private async apiCall(newChildren: BlockObjectRequest[]) {
+    try {
+      await this.notion.blocks.children.append({
         block_id: this.blockID,
-        children: [
-          {
-            type: "divider",
-            divider: {},
-          },
-          {
-            type: "paragraph",
-            paragraph: {
-              rich_text: [
-                {
-                  text: {
-                    content: text,
-                  },
-                },
-              ],
+        children: newChildren,
+      });
+    } catch (e) {
+      throw new Error("Notion API Error");
+    }
+  }
+
+  async addDivider() {
+    await this.apiCall([
+      {
+        type: "divider",
+        divider: {},
+      },
+    ]);
+  }
+
+  async addText(text: string) {
+    await this.apiCall([
+      {
+        type: "paragraph",
+        paragraph: {
+          rich_text: [
+            {
+              text: {
+                content: text,
+              },
             },
-          },
-        ],
-      })
-      .catch((error) => console.error(error));
+          ],
+        },
+      },
+    ]);
   }
 
   async addImage(URL: string) {
-    await this.notion.blocks.children
-      .append({
-        block_id: this.blockID,
-        children: [
-          {
-            type: "image",
-            image: {
-              type: "external",
-              external: {
-                url: URL,
-              },
-            },
+    await this.apiCall([
+      {
+        type: "image",
+        image: {
+          type: "external",
+          external: {
+            url: URL,
           },
-        ],
-      })
-      .catch((error) => console.error(error));
+        },
+      },
+    ]);
   }
 }
-
-const addText = async (notionToken: string, blockID: string, text: string) => {
-  const notion = new Client({
-    auth: notionToken,
-  });
-
-  await notion.blocks.children
-    .append({
-      block_id: blockID,
-      children: [
-        {
-          type: "divider",
-          divider: {},
-        },
-        {
-          type: "paragraph",
-          paragraph: {
-            rich_text: [
-              {
-                text: {
-                  content: text,
-                },
-              },
-            ],
-          },
-        },
-      ],
-    })
-    .catch((error) => console.error(error));
-};
-
-// addText(
-//   "secret_AZDYzGxoeqswK0tmLlXShIIpR5ooRIGSvRHYrpqgPn7",
-//   "b1509f8457f34dfd9fe4180682ca35c0",
-//   "HI"
-// );
 
 export { Notion };

@@ -1,6 +1,10 @@
-import { Telegraf, Context, Scenes, session } from "telegraf";
+import { Telegraf, session } from "telegraf";
+import { config } from "../config";
 import { Notion } from "../notion/notion";
-import { getUserData, setUpStorage, setUserData, UserData } from "./storage";
+import { MyContext } from "./context";
+import { onMessage } from "./handleMessage";
+import { getUserData, setUpStorage } from "./storage";
+import { addWizard } from "./wizard";
 
 const PROMPT_TEXT = `
 *AddToNotionBot*
@@ -28,19 +32,10 @@ __Help__
 Use the command \`help\` to show this message
 `;
 
-interface MyContext extends Context {
-  userData?: UserData;
-  userID?: string;
-  scene: Scenes.SceneContextScene<MyContext>;
-  notion: Notion;
-}
-
-const setupBot = async (
-  TELEGRAM_BOT_TOKEN: string
-): Promise<Telegraf<MyContext>> => {
+const setupBot = async (): Promise<Telegraf<MyContext>> => {
   await setUpStorage();
 
-  const bot = new Telegraf<MyContext>(TELEGRAM_BOT_TOKEN);
+  const bot = new Telegraf<MyContext>(config.telegramBotToken);
 
   const hasUserInfo = (ctx: MyContext): boolean => {
     return !!ctx.userData?.notionToken && !!ctx.userData.webDumpPageID;
@@ -49,6 +44,7 @@ const setupBot = async (
   // register middlewares
   bot.use(session());
   bot.use(async (ctx, next) => {
+    // inject user data into context
     const userID = ctx.from?.id.toString() || "";
     const userData = await getUserData(userID);
 
@@ -63,38 +59,7 @@ const setupBot = async (
     return next();
   });
 
-  // wizard
-  const superWizard = new Scenes.WizardScene(
-    "setup",
-    async (ctx) => {
-      await ctx.reply("What's your 'Internal Integration Token' from Notion?");
-      ctx.wizard.state.data = {};
-      return ctx.wizard.next();
-    },
-    async (ctx) => {
-      ctx.wizard.state.data.notionToken = ctx.message.text;
-      await ctx.reply("What is the link for the Notion Page you want to use?");
-      return ctx.wizard.next();
-    },
-    async (ctx) => {
-      const link: string = ctx.message.text;
-
-      const webDumpPageID = link.split("-").slice(-1)[0];
-
-      ctx.wizard.state.data.webDumpPageID = webDumpPageID;
-
-      const userData = ctx.wizard.state.data;
-      await setUserData(ctx.userID, userData);
-
-      await ctx.reply(
-        "I stored your information. Try to send a message and see if it appears in Notion."
-      );
-      return await ctx.scene.leave();
-    }
-  );
-
-  const stage = new Scenes.Stage([superWizard]);
-  bot.use(stage.middleware());
+  addWizard(bot);
 
   // commands
   bot.command("setup", async (ctx) => {
@@ -126,37 +91,7 @@ const setupBot = async (
     return next();
   });
 
-  bot.on("message", async (ctx) => {
-    const message = ctx.update.message;
-    console.log(ctx.update.message);
-
-    if ("document" in message) {
-      // handle file
-      const file = await ctx.telegram.getFileLink(message.document.file_id);
-      // console.log(file);
-
-      ctx.notion.addImage(file.href);
-    }
-
-    if ("photo" in message) {
-      const file = await ctx.telegram.getFileLink(
-        message.photo.slice(-1)[0].file_id
-      );
-      // console.log(file);
-
-      ctx.notion.addImage(file.href);
-    }
-
-    if ("caption" in message) {
-      // handle caption
-    }
-
-    if ("text" in message) {
-      // handle text
-      message.text;
-      ctx.notion.addText(message.text);
-    }
-  });
+  bot.on("message", (ctx) => onMessage(ctx));
 
   // Enable graceful stop
   process.once("SIGINT", () => bot.stop("SIGINT"));
