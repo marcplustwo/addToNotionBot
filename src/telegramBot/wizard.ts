@@ -2,6 +2,18 @@ import { Scenes, Telegraf } from "telegraf";
 import { MyContext } from "./context";
 import { setUserData } from "./storage";
 
+const getPageID = (link: string): string => {
+  const regex = /www\.notion\.so\/(\w*\-)*(?<pageID>\w*)\??/;
+
+  const matches = link.match(regex);
+
+  if (matches?.groups) {
+    return matches.groups.pageID;
+  } else {
+    throw new Error("Couldn't parse Notion link");
+  }
+};
+
 const addWizard = (bot: Telegraf<MyContext>) => {
   // wizard
   const superWizard = new Scenes.WizardScene(
@@ -21,13 +33,18 @@ const addWizard = (bot: Telegraf<MyContext>) => {
 
       const webDumpPageID = link.split("-").slice(-1)[0];
 
-      ctx.wizard.state.data.webDumpPageID = webDumpPageID;
+      const pageID = getPageID(link);
+
+      ctx.wizard.state.data.webDumpPageID = pageID;
 
       const userData = ctx.wizard.state.data;
       await setUserData(ctx.userID, userData);
 
       await ctx.reply(
-        "I stored your information. Try to send a message and see if it appears in Notion."
+        "I stored your information. Try to send a message and see if it appears in Notion.\n\
+        Verify that it is correct.\n\
+        If not, restart the setup with the command /setup.\n" +
+          JSON.stringify(userData, null, 2)
       );
       return await ctx.scene.leave();
     }

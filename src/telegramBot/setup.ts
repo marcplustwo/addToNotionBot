@@ -18,6 +18,9 @@ Go to [My Integrations](https://www\\.notion\\.so/my\\-integrations) and create 
 I will ask for the "Internal Integration Token" shortly
 
 Step 2:
+This Bot creates pages in a Database. You need to Create a *(full-page) database with the propertier: _Name, URL, Tags_*
+
+Step 3:
 Go to the page you want to use as a WebDump, go to settings 
 Then you need to add the connection to the connection you created in Step 1
 Next, you have to send me the page link, so I know, where to add your links

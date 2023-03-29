@@ -10962,55 +10962,90 @@ var config2 = {
 // src/notion/notion.ts
 var import_client = __toESM(require_src2());
 var Notion = class {
-  constructor(notionToken, blockID) {
-    this.blockID = blockID;
+  constructor(notionToken, pageID) {
+    this.pageID = pageID;
     this.notion = new import_client.Client({
       auth: notionToken
     });
   }
-  apiCall(newChildren) {
+  appendToPage(pageID, newChildren) {
     return __async(this, null, function* () {
       try {
         yield this.notion.blocks.children.append({
-          block_id: this.blockID,
+          block_id: pageID,
           children: newChildren
         });
       } catch (e) {
+        console.error(e);
         throw new Error("Notion API Error");
       }
     });
   }
-  addDivider() {
+  getPage(pageID) {
     return __async(this, null, function* () {
-      yield this.apiCall([
-        {
-          type: "divider",
-          divider: {}
-        }
-      ]);
+      return this.notion.blocks.children.list({
+        block_id: pageID
+      });
     });
   }
-  addText(text) {
+  addPageToDatabase(textObj) {
     return __async(this, null, function* () {
-      yield this.apiCall([
-        {
-          type: "paragraph",
-          paragraph: {
-            rich_text: [
-              {
-                text: {
-                  content: text
-                }
+      const pageProperties = {
+        Name: {
+          type: "title",
+          title: [{ type: "text", text: { content: textObj.title } }]
+        }
+      };
+      if (textObj.links)
+        pageProperties.URL = {
+          url: textObj.links[0]
+        };
+      if (textObj.tags)
+        pageProperties.Tags = {
+          multi_select: textObj.tags.map((tag) => ({
+            name: tag
+          }))
+        };
+      return this.notion.pages.create({
+        parent: {
+          type: "database_id",
+          database_id: this.pageID
+        },
+        properties: pageProperties
+      });
+    });
+  }
+  addTextToPage(pageID, textObj) {
+    return __async(this, null, function* () {
+      const blocks = [];
+      console.log(textObj);
+      if (textObj.links)
+        blocks.push(
+          ...textObj.links.map((link) => ({
+            type: "bookmark",
+            bookmark: {
+              url: link
+            }
+          }))
+        );
+      blocks.push({
+        type: "paragraph",
+        paragraph: {
+          rich_text: [
+            {
+              text: {
+                content: textObj.text
               }
-            ]
-          }
+            }
+          ]
         }
-      ]);
+      });
+      yield this.appendToPage(pageID, blocks);
     });
   }
-  addImage(URL2) {
+  addImageToPage(pageID, URL2) {
     return __async(this, null, function* () {
-      yield this.apiCall([
+      yield this.appendToPage(pageID, [
         {
           type: "image",
           image: {
@@ -11023,6 +11058,21 @@ var Notion = class {
       ]);
     });
   }
+};
+
+// src/util/processText.ts
+var processText = (text) => {
+  const title = text.split("\n")[0];
+  const regexLink = new RegExp("(?<link>https?:\\/\\/[^\\s]+)", "gm");
+  const links = text.match(regexLink);
+  const regexTags = new RegExp("(?<tag>\\@\\w*)", "gm");
+  const tags = text.match(regexTags);
+  return {
+    text,
+    title,
+    tags: tags ? tags : void 0,
+    links: links ? links : void 0
+  };
 };
 
 // src/telegramBot/handleMessage.ts
@@ -11042,30 +11092,38 @@ var uploadFile = (telegramURL) => __async(void 0, null, function* () {
   const data = yield resp.json();
   return `${config2.imgUploadURL}/${data.filename}`;
 });
-var handleFile = (ctx) => __async(void 0, null, function* () {
+var handleText = (notion, text) => __async(void 0, null, function* () {
+  const textObj = processText(text);
+  const page = yield notion.addPageToDatabase(textObj);
+  yield notion.addTextToPage(page.id, textObj);
+  return page.url;
+});
+var handlePhoto = (notion, photoURL, caption) => __async(void 0, null, function* () {
+  const textObj = processText(caption || "Screenshot");
+  const page = yield notion.addPageToDatabase(textObj);
+  const newURL = yield uploadFile(photoURL);
+  yield notion.addImageToPage(page.id, newURL);
+  return page.url;
+});
+var handleMessage = (ctx) => __async(void 0, null, function* () {
   const message = ctx.update.message;
-  console.log(ctx.update.message);
-  var file = null;
-  if ("document" in message) {
-    file = yield ctx.telegram.getFileLink(message.document.file_id);
-  }
-  if ("photo" in message) {
-    file = yield ctx.telegram.getFileLink(message.photo.slice(-1)[0].file_id);
-  }
-  if (file) {
-    const newURL = yield uploadFile(file.href);
-    yield ctx.notion.addImage(newURL);
-  }
-  if ("caption" in message) {
-  }
   if ("text" in message) {
-    yield ctx.notion.addText(message.text);
+    return yield handleText(ctx.notion, message.text);
+  } else if ("photo" in message) {
+    const file = yield ctx.telegram.getFileLink(
+      message.photo.slice(-1)[0].file_id
+    );
+    return yield handlePhoto(ctx.notion, file.href, message.caption);
   }
-  yield ctx.notion.addDivider();
 });
 var onMessage = (ctx) => __async(void 0, null, function* () {
-  yield handleFile(ctx);
-  yield ctx.reply("Added.");
+  try {
+    const pageURL = yield handleMessage(ctx);
+    yield ctx.reply(`Added a new page for you: ${pageURL}`);
+  } catch (error) {
+    console.error(error);
+    yield ctx.reply("Error: " + error);
+  }
 });
 
 // src/telegramBot/storage.ts
@@ -11089,6 +11147,15 @@ var setUserData = (userID, userData) => __async(void 0, null, function* () {
 
 // src/telegramBot/wizard.ts
 var import_telegraf = __toESM(require_lib3());
+var getPageID = (link) => {
+  const regex = new RegExp("www\\.notion\\.so\\/(\\w*\\-)*(?<pageID>\\w*)\\??");
+  const matches = link.match(regex);
+  if (matches == null ? void 0 : matches.groups) {
+    return matches.groups.pageID;
+  } else {
+    throw new Error("Couldn't parse Notion link");
+  }
+};
 var addWizard = (bot) => {
   const superWizard = new import_telegraf.Scenes.WizardScene(
     "setup",
@@ -11105,11 +11172,12 @@ var addWizard = (bot) => {
     (ctx) => __async(void 0, null, function* () {
       const link = ctx.message.text;
       const webDumpPageID = link.split("-").slice(-1)[0];
-      ctx.wizard.state.data.webDumpPageID = webDumpPageID;
+      const pageID = getPageID(link);
+      ctx.wizard.state.data.webDumpPageID = pageID;
       const userData = ctx.wizard.state.data;
       yield setUserData(ctx.userID, userData);
       yield ctx.reply(
-        "I stored your information. Try to send a message and see if it appears in Notion."
+        "I stored your information. Try to send a message and see if it appears in Notion.\n        Verify that it is correct.\n        If not, restart the setup with the command /setup.\n" + JSON.stringify(userData, null, 2)
       );
       return yield ctx.scene.leave();
     })
@@ -11131,6 +11199,9 @@ Go to [My Integrations](https://www\\.notion\\.so/my\\-integrations) and create 
 I will ask for the "Internal Integration Token" shortly
 
 Step 2:
+This Bot creates pages in a Database. You need to Create a *(full-page) database with the propertier: _Name, URL, Tags_*
+
+Step 3:
 Go to the page you want to use as a WebDump, go to settings 
 Then you need to add the connection to the connection you created in Step 1
 Next, you have to send me the page link, so I know, where to add your links
