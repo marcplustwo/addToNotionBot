@@ -11,7 +11,7 @@ const processText = (text: string): TextObject => {
   const regexLink = /(https?:\/\/[^\s]+)/gm;
   const links = text.match(regexLink);
 
-  const regexTags = /\s(?:@|#)(\w*)/gm;
+  const regexTags = /\s(?:@|#)(\w+)/gm;
   const tags = text.match(regexTags);
 
   return {
