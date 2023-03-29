@@ -21,6 +21,7 @@ RUN yarn build
 
 # Add a volume to include the secret .env file
 VOLUME [ "/app/.env" ]
+VOLUME [ "/app/storage" ]
 
 # Set the command to run when the container starts
 CMD [ "node", "build/index.js" ]

@@ -10,3 +10,4 @@ services:
     restart: always
     volumes:
       - ".env:/app/.env"
+      - "./storage:/app/storage"
