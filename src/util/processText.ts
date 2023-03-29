@@ -8,10 +8,10 @@ interface TextObject {
 const processText = (text: string): TextObject => {
   const title = text.split("\n")[0];
 
-  const regexLink = /(?<link>https?:\/\/[^\s]+)/gm;
+  const regexLink = /(https?:\/\/[^\s]+)/gm;
   const links = text.match(regexLink);
 
-  const regexTags = /(?<tag>\@\w*)/gm;
+  const regexTags = /\s(?:@|#)(\w*)/gm;
   const tags = text.match(regexTags);
 
   return {
