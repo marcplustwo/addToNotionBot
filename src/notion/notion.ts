@@ -38,13 +38,29 @@ class Notion {
     });
   }
 
-  async addPageToDatabase(textObj: TextObject): Promise<PageObjectResponse> {
+  async addPageToDatabase(
+    textObj: TextObject,
+    imgURL?: string
+  ): Promise<PageObjectResponse> {
     const pageProperties: any = {
       Name: {
         type: "title",
         title: [{ type: "text", text: { content: textObj.title } }],
       },
     };
+
+    if (imgURL)
+      pageProperties.Image = {
+        files: [
+          {
+            type: "external",
+            name: "Image",
+            external: {
+              url: imgURL,
+            },
+          },
+        ],
+      };
 
     if (textObj.links)
       pageProperties.URL = {
@@ -67,10 +83,19 @@ class Notion {
     }) as Promise<PageObjectResponse>;
   }
 
-  async addTextToPage(pageID: string, textObj: TextObject) {
+  async addToPage(pageID: string, textObj: TextObject, imgURL?: string) {
     const blocks: any = [];
 
-    console.log(textObj);
+    if (imgURL)
+      blocks.push({
+        type: "image",
+        image: {
+          type: "external",
+          external: {
+            url: imgURL,
+          },
+        },
+      });
 
     if (textObj.links)
       blocks.push(
@@ -96,20 +121,6 @@ class Notion {
     });
 
     await this.appendToPage(pageID, blocks);
-  }
-
-  async addImageToPage(pageID: string, URL: string) {
-    await this.appendToPage(pageID, [
-      {
-        type: "image",
-        image: {
-          type: "external",
-          external: {
-            url: URL,
-          },
-        },
-      },
-    ]);
   }
 }
 

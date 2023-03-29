@@ -10988,7 +10988,7 @@ var Notion = class {
       });
     });
   }
-  addPageToDatabase(textObj) {
+  addPageToDatabase(textObj, imgURL) {
     return __async(this, null, function* () {
       const pageProperties = {
         Name: {
@@ -10996,6 +10996,18 @@ var Notion = class {
           title: [{ type: "text", text: { content: textObj.title } }]
         }
       };
+      if (imgURL)
+        pageProperties.Image = {
+          files: [
+            {
+              type: "external",
+              name: "Image",
+              external: {
+                url: imgURL
+              }
+            }
+          ]
+        };
       if (textObj.links)
         pageProperties.URL = {
           url: textObj.links[0]
@@ -11015,10 +11027,19 @@ var Notion = class {
       });
     });
   }
-  addTextToPage(pageID, textObj) {
+  addToPage(pageID, textObj, imgURL) {
     return __async(this, null, function* () {
       const blocks = [];
-      console.log(textObj);
+      if (imgURL)
+        blocks.push({
+          type: "image",
+          image: {
+            type: "external",
+            external: {
+              url: imgURL
+            }
+          }
+        });
       if (textObj.links)
         blocks.push(
           ...textObj.links.map((link) => ({
@@ -11043,21 +11064,6 @@ var Notion = class {
       yield this.appendToPage(pageID, blocks);
     });
   }
-  addImageToPage(pageID, URL2) {
-    return __async(this, null, function* () {
-      yield this.appendToPage(pageID, [
-        {
-          type: "image",
-          image: {
-            type: "external",
-            external: {
-              url: URL2
-            }
-          }
-        }
-      ]);
-    });
-  }
 };
 
 // src/util/processText.ts
@@ -11075,7 +11081,7 @@ var processText = (text) => {
   };
 };
 
-// src/telegramBot/handleMessage.ts
+// src/util/uploadFile.ts
 var uploadFile = (telegramURL) => __async(void 0, null, function* () {
   const resp = yield fetch(config2.imgUploadURL, {
     method: "POST",
@@ -11092,29 +11098,25 @@ var uploadFile = (telegramURL) => __async(void 0, null, function* () {
   const data = yield resp.json();
   return `${config2.imgUploadURL}/${data.filename}`;
 });
-var handleText = (notion, text) => __async(void 0, null, function* () {
-  const textObj = processText(text);
-  const page = yield notion.addPageToDatabase(textObj);
-  yield notion.addTextToPage(page.id, textObj);
-  return page.url;
-});
-var handlePhoto = (notion, photoURL, caption) => __async(void 0, null, function* () {
-  const textObj = processText(caption || "Screenshot");
-  const page = yield notion.addPageToDatabase(textObj);
-  const newURL = yield uploadFile(photoURL);
-  yield notion.addImageToPage(page.id, newURL);
-  return page.url;
-});
+
+// src/telegramBot/handleMessage.ts
 var handleMessage = (ctx) => __async(void 0, null, function* () {
   const message = ctx.update.message;
+  var text = "";
+  var imgURL;
   if ("text" in message) {
-    return yield handleText(ctx.notion, message.text);
+    text = message.text;
   } else if ("photo" in message) {
     const file = yield ctx.telegram.getFileLink(
       message.photo.slice(-1)[0].file_id
     );
-    return yield handlePhoto(ctx.notion, file.href, message.caption);
+    text = message.caption || "Image";
+    imgURL = yield uploadFile(file.href);
   }
+  const textObj = processText(text);
+  const page = yield ctx.notion.addPageToDatabase(textObj, imgURL);
+  yield ctx.notion.addToPage(page.id, textObj, imgURL);
+  return page.url;
 });
 var onMessage = (ctx) => __async(void 0, null, function* () {
   try {
@@ -11199,7 +11201,7 @@ Go to [My Integrations](https://www\\.notion\\.so/my\\-integrations) and create 
 I will ask for the "Internal Integration Token" shortly
 
 Step 2:
-This Bot creates pages in a Database. You need to Create a *(full-page) database with the propertier: _Name, URL, Tags_*
+This Bot creates pages in a Database. You need to Create a *(full-page) database with the propertier: _Name, URL, Tags, Image_*
 
 Step 3:
 Go to the page you want to use as a WebDump, go to settings 

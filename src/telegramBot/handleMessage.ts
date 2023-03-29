@@ -1,73 +1,34 @@
-import { text } from "stream/consumers";
 import { NarrowedContext } from "telegraf";
 import { Message, Update } from "telegraf/types";
-import { config } from "../config";
-import { Notion } from "../notion/notion";
 import { processText } from "../util/processText";
+import { uploadFile } from "../util/uploadFile";
 import { MyContext } from "./context";
-
-const uploadFile = async (telegramURL: string): Promise<string> => {
-  const resp = await fetch(config.imgUploadURL, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({
-      url: telegramURL,
-    }),
-  });
-
-  if (!resp.ok) {
-    throw new Error("Error uploading file.");
-  }
-
-  const data: { filename: string } = await resp.json();
-
-  return `${config.imgUploadURL}/${data.filename}`;
-};
-
-const handleText = async (notion: Notion, text: string) => {
-  const textObj = processText(text);
-  const page = await notion.addPageToDatabase(textObj);
-
-  await notion.addTextToPage(page.id, textObj);
-
-  return page.url;
-};
-
-const handlePhoto = async (
-  notion: Notion,
-  photoURL: string,
-  caption?: string
-) => {
-  const textObj = processText(caption || "Screenshot");
-
-  const page = await notion.addPageToDatabase(textObj);
-
-  const newURL = await uploadFile(photoURL);
-  await notion.addImageToPage(page.id, newURL);
-
-  return page.url;
-};
 
 const handleMessage = async (
   ctx: NarrowedContext<MyContext, Update.MessageUpdate<Message>>
 ) => {
   const message = ctx.update.message;
 
+  var text: string = "";
+  var imgURL: string | undefined;
+
   if ("text" in message) {
-    return await handleText(ctx.notion, message.text);
+    text = message.text;
   } else if ("photo" in message) {
     const file = await ctx.telegram.getFileLink(
       message.photo.slice(-1)[0].file_id
     );
 
-    return await handlePhoto(ctx.notion, file.href, message.caption);
+    text = message.caption || "Image";
+    imgURL = await uploadFile(file.href);
   }
-  // handle document
-  // if ("document" in message) {
-  //   file = await ctx.telegram.getFileLink(message.document.file_id);
-  // }
+
+  const textObj = processText(text);
+
+  const page = await ctx.notion.addPageToDatabase(textObj, imgURL);
+  await ctx.notion.addToPage(page.id, textObj, imgURL);
+
+  return page.url;
 };
 
 const onMessage = async (
