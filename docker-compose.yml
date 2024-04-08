@@ -1,7 +1,4 @@
-version: '3'
-
 services:
-
   addtonotionbot:
     # depends_on:
     #   - imgpush
